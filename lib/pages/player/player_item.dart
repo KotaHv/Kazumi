@@ -123,7 +123,7 @@ class _PlayerItemState extends State<PlayerItem>
 
   void _handleTap() {
     if (Utils.isDesktop()) {
-      playerController.playOrPause();
+      handlePlayOrPauseWithSync();
     } else {
       if (playerController.showVideoController) {
         hideVideoController();
@@ -137,7 +137,7 @@ class _PlayerItemState extends State<PlayerItem>
     if (Utils.isDesktop() && !videoPageController.isPip) {
       handleFullscreen();
     } else {
-      playerController.playOrPause();
+      handlePlayOrPauseWithSync();
     }
   }
 
@@ -221,6 +221,38 @@ class _PlayerItemState extends State<PlayerItem>
     startHideTimer();
     playerTimer?.cancel();
     playerTimer = getPlayerTimer();
+  }
+
+  /// 处理播放/暂停操作，在暂停时同步历史记录
+  Future<void> handlePlayOrPauseWithSync() async {
+    // 如果当前正在播放，即将暂停，则同步历史记录
+    if (playerController.playerPlaying) {
+      // 同步本地历史记录
+      if (!videoPageController.loading &&
+          !playerController.hasInitializationError) {
+        historyController.updateHistory(
+            videoPageController.currentEpisode,
+            videoPageController.currentRoad,
+            videoPageController.currentPlugin.name,
+            videoPageController.bangumiItem,
+            playerController.playerPosition,
+            videoPageController.src,
+            videoPageController.roadList[videoPageController.currentRoad]
+                .identifier[videoPageController.currentEpisode - 1]);
+      }
+
+      // 同步WebDAV历史记录
+      if (webDavEnable &&
+          webDavEnableHistory &&
+          !videoPageController.loading &&
+          !playerController.hasInitializationError) {
+        var webDav = WebDav();
+        webDav.updateHistory();
+      }
+    }
+
+    // 执行播放/暂停操作
+    await playerController.playOrPause();
   }
 
   void handleFullscreen() {
@@ -363,7 +395,13 @@ class _PlayerItemState extends State<PlayerItem>
         });
       }
       // 历史记录相关
-      if (playerController.playerPlaying && !videoPageController.loading) {
+      // 只有在以下条件都满足时才更新历史记录：
+      // 1. 播放器正在播放
+      // 2. 页面不在加载状态
+      // 3. 没有初始化错误
+      if (playerController.playerPlaying &&
+          !videoPageController.loading &&
+          !playerController.hasInitializationError) {
         if (!WebDav().isHistorySyncing) {
           historyController.updateHistory(
               videoPageController.currentEpisode,
@@ -376,6 +414,17 @@ class _PlayerItemState extends State<PlayerItem>
                   .identifier[videoPageController.currentEpisode - 1]);
         }
       }
+      // WebDAV历史记录同步相关 - 每10秒同步一次
+      if (webDavEnable &&
+          webDavEnableHistory &&
+          playerController.playerPlaying &&
+          !videoPageController.loading &&
+          !playerController.hasInitializationError &&
+          DateTime.now().second % 10 == 0) {
+        var webDav = WebDav();
+        webDav.updateHistory();
+      }
+
       // 自动播放下一集
       if (playerController.completed &&
           videoPageController.currentEpisode <
@@ -944,6 +993,35 @@ class _PlayerItemState extends State<PlayerItem>
 
   @override
   void dispose() {
+    // 在退出播放页面时同步更新历史记录
+    try {
+      // 同步本地历史记录
+      if (!videoPageController.loading &&
+          !playerController.hasInitializationError) {
+        historyController.updateHistory(
+            videoPageController.currentEpisode,
+            videoPageController.currentRoad,
+            videoPageController.currentPlugin.name,
+            videoPageController.bangumiItem,
+            playerController.playerPosition,
+            videoPageController.src,
+            videoPageController.roadList[videoPageController.currentRoad]
+                .identifier[videoPageController.currentEpisode - 1]);
+      }
+
+      // 同步WebDAV历史记录
+      if (webDavEnable &&
+          webDavEnableHistory &&
+          !videoPageController.loading &&
+          !playerController.hasInitializationError) {
+        var webDav = WebDav();
+        webDav.updateHistory();
+      }
+    } catch (e) {
+      // 同步失败也不影响页面退出
+      debugPrint('退出播放页面时同步历史记录失败: $e');
+    }
+
     // Don't dispose player here
     // We need to reuse the player after episode is changed and player item is disposed
     // We dispose player after video page disposed
@@ -1028,7 +1106,7 @@ class _PlayerItemState extends State<PlayerItem>
                                 if (event.logicalKey ==
                                     LogicalKeyboardKey.space) {
                                   try {
-                                    playerController.playOrPause();
+                                    handlePlayOrPauseWithSync();
                                   } catch (e) {
                                     KazumiLogger().log(
                                         Level.error, '播放器内部错误 ${e.toString()}');
@@ -1226,6 +1304,7 @@ class _PlayerItemState extends State<PlayerItem>
                                 showSyncPlayRoomCreateDialog,
                             showSyncPlayEndPointSwitchDialog:
                                 showSyncPlayEndPointSwitchDialog,
+                            handlePlayOrPause: handlePlayOrPauseWithSync,
                           )
                         : SmallestPlayerItemPanel(
                             onBackPressed: widget.onBackPressed,
@@ -1246,6 +1325,7 @@ class _PlayerItemState extends State<PlayerItem>
                                 showSyncPlayRoomCreateDialog,
                             showSyncPlayEndPointSwitchDialog:
                                 showSyncPlayEndPointSwitchDialog,
+                            handlePlayOrPause: handlePlayOrPauseWithSync,
                           ),
                     // 播放器手势控制
                     Positioned.fill(

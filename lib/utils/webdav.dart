@@ -49,9 +49,11 @@ class WebDav {
         // KazumiLogger().log(Level.warning, 'webDav backup directory not exists, creating');
         await client.mkdir('/kazumiSync');
         initialized = true;
-        KazumiLogger().log(Level.info, 'webDav backup directory create success');
+        KazumiLogger()
+            .log(Level.info, 'webDav backup directory create success');
       } catch (_) {
-        KazumiLogger().log(Level.error, 'webDav backup directory create failed');
+        KazumiLogger()
+            .log(Level.error, 'webDav backup directory create failed');
         rethrow;
       }
     } catch (e) {
@@ -63,7 +65,7 @@ class WebDav {
   Future<void> update(String boxName) async {
     var directory = await getApplicationSupportDirectory();
     await File('${directory.path}/hive/$boxName.hive')
-          .copy('${directory.path}/hive/$boxName.hive.tmp');
+        .copy('${directory.path}/hive/$boxName.hive.tmp');
     try {
       await client.remove('/kazumiSync/$boxName.tmp.cache');
     } catch (_) {}
@@ -130,6 +132,11 @@ class WebDav {
         // print(c / t);
       });
       await GStorage.patchHistory(existingFile.path);
+
+      // 拉取并合并后，再上传一次以确保本地最新数据也同步到服务器
+      await update('histories');
+      KazumiLogger().log(
+          Level.info, 'webDav history download, patch and upload completed');
     } catch (e) {
       KazumiLogger()
           .log(Level.error, 'webDav download and patch history failed $e');
@@ -182,7 +189,6 @@ class WebDav {
           .log(Level.error, 'webDav download collect changes failed $e');
     });
     await Future.wait([collectiblesFuture, changesFuture]);
-
 
     // we should block download changes when download collectibles failed
     // download changes failed but collectibles success means remote files broken or newwork error

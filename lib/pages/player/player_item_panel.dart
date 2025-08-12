@@ -38,6 +38,7 @@ class PlayerItemPanel extends StatefulWidget {
     required this.showVideoInfo,
     required this.showSyncPlayRoomCreateDialog,
     required this.showSyncPlayEndPointSwitchDialog,
+    required this.handlePlayOrPause,
   });
 
   final void Function(BuildContext) onBackPressed;
@@ -57,6 +58,7 @@ class PlayerItemPanel extends StatefulWidget {
   final void Function() showVideoInfo;
   final void Function() showSyncPlayRoomCreateDialog;
   final void Function() showSyncPlayEndPointSwitchDialog;
+  final Future<void> Function() handlePlayOrPause;
 
   @override
   State<PlayerItemPanel> createState() => _PlayerItemPanelState();
@@ -844,7 +846,7 @@ class _PlayerItemPanelState extends State<PlayerItemPanel> {
                                     ? Icons.pause_rounded
                                     : Icons.play_arrow_rounded),
                                 onPressed: () {
-                                  playerController.playOrPause();
+                                  widget.handlePlayOrPause();
                                 },
                               ),
                               // 更换选集

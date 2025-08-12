@@ -112,6 +112,10 @@ abstract class _PlayerController with Store {
   @observable
   double playerSpeed = 1.0;
 
+  // 标记播放器是否在初始化阶段发生致命错误（用于防止错误时更新历史记录）
+  @observable
+  bool hasInitializationError = false;
+
   Box setting = GStorage.setting;
   bool hAenable = true;
   late String hardwareDecoder;
@@ -167,6 +171,7 @@ abstract class _PlayerController with Store {
     buffer = Duration.zero;
     duration = Duration.zero;
     completed = false;
+    hasInitializationError = false; // 重置错误标志
     try {
       await dispose(disposeSyncPlayController: false);
     } catch (_) {}
@@ -292,6 +297,10 @@ abstract class _PlayerController with Store {
     bool showPlayerError =
         setting.get(SettingBoxKey.showPlayerError, defaultValue: true);
     mediaPlayer.stream.error.listen((event) {
+      // 只有在播放器刚初始化且还没有成功播放时，才设置初始化错误标志
+      if (playerDuration.inMilliseconds <= 0) {
+        hasInitializationError = true;
+      }
       if (showPlayerError) {
         KazumiDialog.showToast(
             message: '播放器内部错误 ${event.toString()} $videoUrl',
@@ -311,6 +320,15 @@ abstract class _PlayerController with Store {
           start: Duration(seconds: offset), httpHeaders: httpHeaders),
       play: autoPlay,
     );
+
+    // 监听播放状态，当成功开始播放时重置错误标志
+    mediaPlayer.stream.playing.listen((isPlaying) {
+      if (isPlaying &&
+          hasInitializationError &&
+          playerDuration.inMilliseconds > 0) {
+        hasInitializationError = false; // 播放成功时重置初始化错误标志
+      }
+    });
 
     return mediaPlayer;
   }
@@ -353,7 +371,6 @@ abstract class _PlayerController with Store {
       KazumiLogger().log(Level.error, '设置播放速度失败 ${e.toString()}');
     }
   }
-
 
   Future<void> setVolume(double value) async {
     value = value.clamp(0.0, 100.0);
@@ -427,6 +444,8 @@ abstract class _PlayerController with Store {
     try {
       await mediaPlayer.dispose();
     } catch (_) {}
+    // 重置初始化错误标志
+    hasInitializationError = false;
   }
 
   Future<void> stop() async {
