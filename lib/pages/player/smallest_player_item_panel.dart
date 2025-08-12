@@ -35,6 +35,7 @@ class SmallestPlayerItemPanel extends StatefulWidget {
     required this.showVideoInfo,
     required this.showSyncPlayRoomCreateDialog,
     required this.showSyncPlayEndPointSwitchDialog,
+    required this.handlePlayOrPause,
   });
 
   final void Function(BuildContext) onBackPressed;
@@ -52,6 +53,7 @@ class SmallestPlayerItemPanel extends StatefulWidget {
   final void Function() showVideoInfo;
   final void Function() showSyncPlayRoomCreateDialog;
   final void Function() showSyncPlayEndPointSwitchDialog;
+  final Future<void> Function() handlePlayOrPause;
 
   @override
   State<SmallestPlayerItemPanel> createState() =>
@@ -743,7 +745,7 @@ class _SmallestPlayerItemPanelState extends State<SmallestPlayerItemPanel> {
                           ? Icons.pause_rounded
                           : Icons.play_arrow_rounded),
                       onPressed: () {
-                        playerController.playOrPause();
+                        widget.handlePlayOrPause();
                       },
                     ),
                     Expanded(

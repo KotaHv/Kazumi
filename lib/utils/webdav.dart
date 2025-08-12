@@ -52,9 +52,11 @@ class WebDav {
           await webDavLocalTempDirectory.create(recursive: true);
         }
         initialized = true;
-        KazumiLogger().log(Level.info, 'webDav backup directory create success');
+        KazumiLogger()
+            .log(Level.info, 'webDav backup directory create success');
       } catch (_) {
-        KazumiLogger().log(Level.error, 'webDav backup directory create failed');
+        KazumiLogger()
+            .log(Level.error, 'webDav backup directory create failed');
         rethrow;
       }
     } catch (e) {
@@ -143,6 +145,11 @@ class WebDav {
       final existingFile = File('${webDavLocalTempDirectory.path}/$fileName');
       await download('histories');
       await GStorage.patchHistory(existingFile.path);
+
+      // 拉取并合并后，再上传一次以确保本地最新数据也同步到服务器
+      await update('histories');
+      KazumiLogger().log(
+          Level.info, 'webDav history download, patch and upload completed');
     } catch (e) {
       KazumiLogger()
           .log(Level.error, 'webDav download and patch history failed $e');
