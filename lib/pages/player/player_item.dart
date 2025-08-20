@@ -995,7 +995,8 @@ class _PlayerItemState extends State<PlayerItem>
     try {
       // 同步本地历史记录
       if (!videoPageController.loading &&
-          !playerController.hasInitializationError) {
+          !playerController.hasInitializationError &&
+          playerController.playerPlaying) {
         historyController.updateHistory(
             videoPageController.currentEpisode,
             videoPageController.currentRoad,
@@ -1011,7 +1012,8 @@ class _PlayerItemState extends State<PlayerItem>
       if (webDavEnable &&
           webDavEnableHistory &&
           !videoPageController.loading &&
-          !playerController.hasInitializationError) {
+          !playerController.hasInitializationError &&
+          playerController.playerPlaying) {
         var webDav = WebDav();
         webDav.updateHistory();
       }
