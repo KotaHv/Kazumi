@@ -191,20 +191,9 @@ class _PlayerItemState extends State<PlayerItem>
     });
   }
 
-  Future<void> _uploadHistoryToWebDav() async {
-    if (webDavEnable && webDavEnableHistory) {
-      try {
-        var webDav = WebDav();
-        await webDav.updateHistory();
-      } catch (_) {}
-    }
-  }
-
   void _handleFullscreenChange(BuildContext context) async {
     playerController.lockPanel = false;
     playerController.danmakuController.clear();
-
-    await _uploadHistoryToWebDav();
   }
 
   void handleProgressBarDragStart(ThumbDragDetails details) {
