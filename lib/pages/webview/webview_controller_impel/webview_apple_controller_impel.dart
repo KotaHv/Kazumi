@@ -103,6 +103,7 @@ class WebviewAppleItemControllerImpel
             ),
           ],
         ),
+        initialSize: const Size(0, 0),
         onWebViewCreated: (controller) {
           debugPrint('[WebView] Created');
           webviewController = controller;

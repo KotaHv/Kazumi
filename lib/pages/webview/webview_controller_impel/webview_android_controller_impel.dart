@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:kazumi/utils/utils.dart';
 import 'package:kazumi/pages/webview/webview_controller.dart';
 import 'package:flutter_inappwebview_platform_interface/flutter_inappwebview_platform_interface.dart';
@@ -24,6 +25,7 @@ class WebviewAndroidItemControllerImpel
           mixedContentMode: MixedContentMode.MIXED_CONTENT_COMPATIBILITY_MODE,
           geolocationEnabled: false,
         ),
+        initialSize: const Size(0, 0),
         onWebViewCreated: (controller) {
           print('[WebView] Created');
           webviewController = controller;
