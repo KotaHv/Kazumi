@@ -1,4 +1,4 @@
-package com.example.kazumi
+package com.predidit.kazumi.fork
 
 import android.content.Intent
 import android.os.Build;
