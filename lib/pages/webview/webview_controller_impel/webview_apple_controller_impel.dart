@@ -15,6 +15,7 @@ class WebviewAppleItemControllerImpel
   Future<void> init() async {
     headlessWebView ??= PlatformHeadlessInAppWebView(
       PlatformHeadlessInAppWebViewCreationParams(
+        initialSize: const Size(0, 0),
         initialUserScripts: UnmodifiableListView<UserScript>([
           UserScript(
             source: '''
